@@ -1,0 +1,19 @@
+{
+  "name": "sprint11",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vovainfo/YP.sprint11.git"
+  },
+  "author": "Vladimir Gumennikov",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vovainfo/YP.sprint11/issues"
+  },
+  "homepage": "https://github.com/vovainfo/YP.sprint11#readme"
+}
