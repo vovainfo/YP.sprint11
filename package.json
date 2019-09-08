@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "webpack --mode production",
+    "dev": "webpack-dev-server --mode development --open --watch"
   },
   "repository": {
     "type": "git",
@@ -15,5 +16,11 @@
   "bugs": {
     "url": "https://github.com/vovainfo/YP.sprint11/issues"
   },
-  "homepage": "https://github.com/vovainfo/YP.sprint11#readme"
+  "homepage": "https://github.com/vovainfo/YP.sprint11#readme",
+  "devDependencies": {
+    "path": "^0.12.7",
+    "webpack": "^4.39.3",
+    "webpack-cli": "^3.3.7",
+    "webpack-dev-server": "^3.8.0"
+  }
 }

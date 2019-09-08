@@ -7,14 +7,9 @@ const apiOptions = {
 }
 
 class Card{
-    constructor(cardFromServer){
+    constructor(cardFromServer, user){
+        this.user = user;
         this.cardFromServer = cardFromServer;
-/*
-        this.name = name;
-        this.link = link;
-        this.likeCount = likeCount;
-        this._id = _id;
- */
         this.cardElement = this.create();
         this.updateLike();
     }
@@ -49,7 +44,7 @@ class Card{
 
         //сливаем их в один
         oneCard.appendChild(imgCard);
-        if(this.cardFromServer.owner._id===user._id){ //это я создал карточку. показать иконку удаления;
+        if(this.cardFromServer.owner._id===this.user._id){ //это я создал карточку. показать иконку удаления;
             imgCard.appendChild(btnImgCard);
         }
         oneCard.appendChild(descCard);
@@ -62,14 +57,11 @@ class Card{
         return oneCard;
     }
     like(){
-        const api = new Api(apiOptions);
         if(this.isLiked()){
             api.deleteLike(this, this.updateCardFromServerAndLike.bind(this));
         }else{
             api.setLike(this, this.updateCardFromServerAndLike.bind(this));
         }
-
-        //this.cardElement.querySelector('.place-card__like-icon').classList.toggle("place-card__like-icon_liked");
     }
     updateCardFromServerAndLike(cardFromServer){
         this.cardFromServer = cardFromServer;
@@ -87,7 +79,7 @@ class Card{
     }
     isLiked(){
         for (let i = 0; i < this.cardFromServer.likes.length; i++) {
-            if(this.cardFromServer.likes[i]._id===user._id){
+            if(this.cardFromServer.likes[i]._id===this.user._id){
                 return true;
             }
         }
@@ -99,22 +91,17 @@ class Card{
 }
 
 class CardList{
-    constructor(domRoot){
+    constructor(domRoot, popupBigImage, user){
         this.domRoot = domRoot;
+        this.user = user;
         this.cards = [];
         this.initCallback();
+        this.popupBigImage = popupBigImage;
     }
     loadInitialCards(){
-        const api = new Api(apiOptions);
+//        const api = new Api(apiOptions);
         api.getInitialCards(this.addOneCard.bind(this));
     }
-    /*
-    render(){
-        for (let i = 0; i < this.cards.length; i++) {
-            this.renderOneCard(this.cards[i]);
-        }
-    }
-    */
 
     renderOneCard(card){
         this.domRoot.appendChild(card.cardElement);
@@ -123,7 +110,7 @@ class CardList{
         this.renderOneCard(this.cards[this.cards.length-1]);
     }
     addOneCardNoRender(cardFromServer){
-        let card = new Card(cardFromServer);
+        const card = new Card(cardFromServer, this.user);
         this.cards.push(card);
     }
     addOneCard(cardFromServer){
@@ -144,7 +131,7 @@ class CardList{
         this.domRoot.addEventListener("click", this.clickOnCardList.bind(this));
     }
     removeCardFromServerAndClient(idx){
-        const api = new Api(apiOptions);
+//        const api = new Api(apiOptions);
         api.deleteCard(this.cards[idx], idx, this.removeCardByIdx.bind(this));
     }
     removeCardByIdx(idx){
@@ -171,7 +158,7 @@ class CardList{
             }else{
                 //вся карточка за исключением иконок лайк и удаления
                 if (event.target.classList.contains("place-card__image")){//картинка, а не подписи внизу
-                    popupBigImage.open(this.cards[idx].cardFromServer.link);
+                    this.popupBigImage.open(this.cards[idx].cardFromServer.link);
                 }
             }
         }
@@ -209,7 +196,7 @@ class Popup{
     validate(){
         let isOk = true;
         for (let i = 0; i < this.form.elements.length; i++) {
-            let errorElement = this.element.querySelector(`#error-${this.form.elements[i].id}`);
+            const errorElement = this.element.querySelector(`#error-${this.form.elements[i].id}`);
             if(this.form.elements[i].classList.contains("js-validate-2-30")){
                 switch (validateLenghtStr(this.form.elements[i].value, 2, 30)) {
                     case 0: errorElement.textContent = "Это обязательное поле"; isOk = false; break;
@@ -247,9 +234,10 @@ class PopupBigImage extends Popup{
 }
 
 class PopupProfile extends Popup{
-    constructor(){
+    constructor(user){
         super("#profile", "profile");
         this.form.addEventListener("submit", this.onSubmitForm.bind(this));
+        this.user = user;
     }
     open(){
         this.form.elements.name.value = user.userInfoName.textContent;
@@ -262,20 +250,15 @@ class PopupProfile extends Popup{
             return;
         this.setButtonText("Сохраняется...");
 
-        user.updateUser(this.form.elements.name.value,
+        this.user.updateUser(this.form.elements.name.value,
                         this.form.elements.job.value,
                         this.restoreButton.bind(this),
                         this.updateMainDomAndClose.bind(this));
 
-        /*
-        userInfoName.textContent = this.form.elements.name.value;
-        userInfoJob.textContent = this.form.elements.job.value;
-         */
-        //this.close();
     }
 
     updateMainDomAndClose(){
-        user.renderUser({name: this.form.elements.name.value, about: this.form.elements.job.value});
+        this.user.renderUser({name: this.form.elements.name.value, about: this.form.elements.job.value});
         this.close();
     }
     restoreButton(){
@@ -284,8 +267,9 @@ class PopupProfile extends Popup{
 }
 
 class PopupUpdateAvatar extends Popup{
-    constructor(){
+    constructor(user){
         super("#update-avatar", "update-avatar");
+        this.user = user;
 
         this.form.addEventListener("submit", this.onSubmitForm.bind(this));
     }
@@ -298,14 +282,14 @@ class PopupUpdateAvatar extends Popup{
         if(!this.validate())
             return;
         this.setButtonText("Сохраняется...");
-        const api = new Api(apiOptions);
+//        const api = new Api(apiOptions);
         api.updateAvatar(this.form.elements.link.value,
             this.restoreButton.bind(this),
             this.updateMainDomAndClose.bind(this));
     }
 
     updateMainDomAndClose(link){
-        user.setAvatar(link);
+        this.user.setAvatar(link);
         this.close();
     }
     restoreButton(){
@@ -318,10 +302,11 @@ class PopupUpdateAvatar extends Popup{
 
 
 class PopupAddCard extends Popup{
-    constructor(){
+    constructor(cardList){
         super("#add-card", "new");
 
         this.form.addEventListener("submit", this.onSubmitForm.bind(this));
+        this.cardList = cardList;
     }
     open(){
         this.form.reset();
@@ -332,12 +317,8 @@ class PopupAddCard extends Popup{
         if(!this.validate())
             return;
         this.setButtonText("Сохраняется...");
-        const api = new Api(apiOptions);
-        /* Можно лучше:
-        * Экземпляр класса api создается несколько раз.
-        * Однако, каждый экземпляр содержит одинаковые параметры, передаваемые в него.
-        * Можно немного оптимизировать, вызывая единожды class Api, внутри уже самих методов, можно обращаться к одному и тому же экземпляру Api.
-        * */
+//        const api = new Api(apiOptions);
+
         api.addCard(this.form.elements.name.value,
                     this.form.elements.link.value,
                     this.restoreButton.bind(this),
@@ -345,7 +326,7 @@ class PopupAddCard extends Popup{
     }
 
     updateMainDomAndClose(cardFromServer){
-        cardList.addOneCard(cardFromServer);
+        this.cardList.addOneCard(cardFromServer);
         this.close();
     }
     restoreButton(){
@@ -368,7 +349,7 @@ class Api {
             if (res.ok) {
                 return res.json();
             }else{
-                let error = new Error(res.statusText);
+                const error = new Error(res.statusText);
                 error.response = res;
                 throw error
             }
@@ -376,9 +357,6 @@ class Api {
         .then((res) => {
             callbackRender(res);
             return res;
-            /* Отлично:
-            * Хорошее использование callback'а
-            * */
         })
         .catch((err) => {
             alert(err.response);
@@ -393,7 +371,7 @@ class Api {
                 if (res.ok) {
                     return res.json();
                 }else{
-                    let error = new Error(res.statusText);
+                    const error = new Error(res.statusText);
                     error.response = res;
                     throw error
                 }
@@ -454,9 +432,6 @@ class Api {
             })
             .then((res) => {
                 callbackUpdateDom(res);
-                /* Отлично:
-                *  Такая же лаконичная передача callback функции в цепочку промисов.
-                * */
             })
             .catch((err) => {
                 alert(err.response);
@@ -474,16 +449,13 @@ class Api {
                 if (res.ok) {
                     return res.json();
                 }else{
-                    let error = new Error(res.statusText);
+                    const error = new Error(res.statusText);
                     error.response = res;
                     throw error
                 }
             })
-            .then((res) => {
+            .then(() => {
                 callbackRemoveCard(idx);
-                /* Можно лучше:
-                * res в данном промисе не используется.
-                * */
             })
             .catch((err) => {
                 alert(err.response);
@@ -499,7 +471,7 @@ class Api {
                 if (res.ok) {
                     return res.json();
                 }else{
-                    let error = new Error(res.statusText);
+                    const error = new Error(res.statusText);
                     error.response = res;
                     throw error
                 }
@@ -520,7 +492,7 @@ class Api {
                 if (res.ok) {
                     return res.json();
                 }else{
-                    let error = new Error(res.statusText);
+                    const error = new Error(res.statusText);
                     error.response = res;
                     throw error
                 }
@@ -544,16 +516,13 @@ class Api {
                 if (res.ok) {
                     return res.json();
                 }else{
-                    let error = new Error(res.statusText);
+                    const error = new Error(res.statusText);
                     error.response = res;
                     throw error
                 }
             })
-            .then((res) => {
+            .then(() => {
                 callbackUpdateDom(link);
-                /* Можно лучше:
-                * res в данном промисе не используется.
-                * */
             })
             .catch((err) => {
                 alert(err.response);
@@ -571,9 +540,7 @@ class User{
         this.userInfoPhoto = document.querySelector('.user-info__photo');
     };
     loadFromServer(){
-        const api = new Api(apiOptions)
         api.getUser(this.renderUser.bind(this));
-
     }
     renderUser(userInfoFromServer){
         this.userInfoName.textContent = userInfoFromServer.name;
@@ -589,11 +556,8 @@ class User{
         this.userInfoPhoto.style.backgroundImage = `url(${link})`;
     }
     updateUser(name, about, callbackRestoreButton, callbackUpdateMainDomAndClose){
-        const api = new Api(apiOptions)
         api.updateProfile(name, about, callbackRestoreButton, callbackUpdateMainDomAndClose);
     }
-
-
 }
 
 
@@ -610,44 +574,20 @@ function validateLenghtStr(str, min, max) {
     return 2;
 }
 
-//const api = new Api(apiOptions);
+const api = new Api(apiOptions);
 
 const user = new User();
 user.loadFromServer();
 
-const cardList = new CardList(document.querySelector('.places-list'));
+const popupBigImage = new PopupBigImage();
+const cardList = new CardList(document.querySelector('.places-list'), popupBigImage, user);
 cardList.loadInitialCards();
 
-const popupAddCard = new PopupAddCard();
-const popupBigImage = new PopupBigImage();
-const popupProfile = new PopupProfile();
-const popupUpdateAvatar = new PopupUpdateAvatar();
+const popupAddCard = new PopupAddCard(cardList);
+const popupProfile = new PopupProfile(user);
+const popupUpdateAvatar = new PopupUpdateAvatar(user);
 
 document.querySelector(".button.user-info__edit").addEventListener("click", popupProfile.open.bind(popupProfile));
 document.querySelector(".user-info__button").addEventListener("click", popupAddCard.open.bind(popupAddCard));
 document.querySelector(".user-info__photo").addEventListener("click", popupUpdateAvatar.open.bind(popupUpdateAvatar));
 
-
-/* Резюме по работе:
-* Супер, весь функционал, в т.ч. и дополнительные задания - реализованы полностью и корректнейшим способом.
-* Достаточно образцовая работа.
-* Приношу извенения за задержку при проверке работы.
-*
-* Что хотелось бы отметить:
-*   1. Структура Api реализована корректно, все фетчи описываются корректным образом.
-*   2. Передача коллбэк функций в методы класса Api
-*   3. Отсутствие недостежимых участков кода внутри фетчей.
-*   4. Корректное выделение ошибки внутри промисов заместо обычного Promise.reject
-*   5. В apiOptions вынесены константные данные.
-*   6. Корректные запросы к серверу.
-*
-* Что можно улучшить:
-*   1. Сократить создание экземпляров класса Api (В целом Api можно поднять вверх кода, создав единожды его экземпляр.
-*   Это нарушит общую логику построения, но будет являться корректным в данном кейсе, т.к. у нас имеются обращения к серверву внутри методов других классов)
-*   2. В некоторых ситуациях нам для выполнения коллбэк функции не требуется res промиса, функции можно очистить от неиспользуемых параметров.
-*
-* Что можно почитать:
-*   1. По промисам: https://medium.com/web-standards/%D0%BE%D0%B1%D0%B5%D1%89%D0%B0%D0%BD%D0%B8%D0%B5-%D0%B1%D1%83%D1%80%D0%B3%D0%B5%D1%80%D0%BD%D0%BE%D0%B9-%D0%B2%D0%B5%D1%87%D0%B5%D1%80%D0%B8%D0%BD%D0%BA%D0%B8-b0ed209809ab
-*   2. По промисам: https://habr.com/ru/company/mailru/blog/269465/
-*   3. По промисам: https://davidwalsh.name/fetch
-* */
